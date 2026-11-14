@@ -1,4 +1,7 @@
 # Logs
+# Local assistant directions
+/AGENTS.md
+
 logs
 *.log
 npm-debug.log*
@@ -155,3 +158,4 @@ vite.config.ts.timestamp-*
 .nx/cache
 .nx/workspace-data
 .nx/migrate-runs
+.neon

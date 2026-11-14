@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MatchStatus {
+  scheduled
+  live
+  finished
+
+  @@map("match_status")
+}
+
+model Match {
+  id         Int          @id @default(autoincrement())
+  sport      String
+  homeTeam   String       @map("home_team")
+  awayTeam   String       @map("away_team")
+  status     MatchStatus  @default(scheduled)
+  startTime  DateTime     @map("start_time") @db.Timestamptz(3)
+  endTime    DateTime?    @map("end_time") @db.Timestamptz(3)
+  homeScore  Int          @default(0) @map("home_score")
+  awayScore  Int          @default(0) @map("away_score")
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  commentary Commentary[]
+
+  @@index([status, startTime])
+  @@map("matches")
+}
+
+model Commentary {
+  id        Int      @id @default(autoincrement())
+  matchId   Int      @map("match_id")
+  match     Match    @relation(fields: [matchId], references: [id])
+  minute    Int?
+  sequence  Int
+  period    String?
+  eventType String?  @map("event_type")
+  actor     String?
+  team      String?
+  message   String
+  metadata  Json?    @db.JsonB
+  tags      String[] @default([])
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([matchId, sequence])
+  @@map("commentary")
+}
