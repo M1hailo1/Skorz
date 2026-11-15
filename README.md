@@ -12,8 +12,9 @@ updates to the frontend over WebSockets.
 - Express server on port 8000 with JSON middleware.
 - Root endpoint (`GET /`) returning a greeting.
 - `POST /matches` validates match details with Zod and saves a match through
-  Prisma, deriving its status from start and end times. `GET /matches` currently
-  returns a placeholder response.
+  Prisma, deriving its status from start and end times.
+- `GET /matches` lists newest matches first, with an optional positive integer
+  `limit` (default 50, maximum 100).
 - Prisma connection to Neon, checked before the server starts.
 - Prisma models for matches and commentary, including match status, scores,
   JSONB event metadata, tags, and ordered commentary per match.
