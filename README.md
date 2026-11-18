@@ -15,6 +15,9 @@ updates to the frontend over WebSockets.
   Prisma, deriving its status from start and end times.
 - `GET /matches` lists newest matches first, with an optional positive integer
   `limit` (default 50, maximum 100).
+- WebSocket clients connect at `/ws`, receive a `welcome` event, and receive
+  `match_created` after a match is saved. A ping/pong heartbeat clears dead
+  connections.
 - Prisma connection to Neon, checked before the server starts.
 - Prisma models for matches and commentary, including match status, scores,
   JSONB event metadata, tags, and ordered commentary per match.
@@ -22,7 +25,39 @@ updates to the frontend over WebSockets.
   and delete helpers.
 - TypeScript development, type checking, and production builds.
 
-Sports data simulation and WebSocket updates are planned and are not available yet.
+Sports data simulation is planned.
+
+## Request protection
+
+| Entry point | Limit per client IP |
+| --- | --- |
+| HTTP | 50 requests per fixed 10-second window |
+| `POST /matches` | Also limited to 10 requests per fixed minute |
+| `/ws` | 5 upgrade attempts per rolling 2 seconds and 20 concurrent sockets |
+
+Rate-limit rejections use HTTP 429. The WebSocket server also caps total
+connections at 1,000, drops slow consumers, and accepts only server-to-client
+application messages. Set `WS_ALLOWED_ORIGINS` to a comma-separated list of exact
+frontend origins (including scheme and port) to enforce a browser origin
+allowlist. With the allowlist enabled, clients must send a listed Origin.
+
+Set `MATCH_WRITE_TOKEN` in the backend's `.env` to enable match creation.
+Generate a secret with `node -p "require('node:crypto').randomBytes(32).toString('hex')"`
+and send it as `Authorization: Bearer <token>` from a trusted backend or CLI.
+Keep the token out of frontend code and transmit it over HTTPS in deployment.
+Match writes accept up to 16 KiB of uncompressed JSON.
+
+Helmet adds HTTP security headers. Match reads and WebSocket upgrades use
+User-Agent bot detection, with selected search and preview agents allowed on
+match reads. User-Agent values are self-reported. Authorized match writes can
+use automation clients and the root route is available to health checks.
+Prisma model queries bind user values, and Zod validates match inputs.
+
+Limits are in memory per process and reset on restart. Client IPs come from the
+direct connection, so behind a reverse proxy all traffic through that proxy
+shares a limit. Configure client-aware limits at a trusted proxy before relying
+on these thresholds for a proxied deployment. A managed WAF or equivalent edge
+filter can provide broader threat detection if needed.
 
 ## Development
 
