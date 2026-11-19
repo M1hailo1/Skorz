@@ -28,11 +28,14 @@ export function createHttpLimiter(windowMs: number, limit: number) {
 
 const digest = (value: string) => createHash("sha256").update(value).digest();
 
-export function requireMatchWriteToken(token: string | undefined): RequestHandler {
+export function requireMatchWriteToken(
+  token: string | undefined,
+  disabledMessage = "Match creation is disabled.",
+): RequestHandler {
   const expected = token && digest(token);
   return (req, res, next) => {
     if (!expected) {
-      res.status(403).json({ error: "Match creation is disabled." });
+      res.status(403).json({ error: disabledMessage });
       return;
     }
 

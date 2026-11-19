@@ -15,6 +15,11 @@ updates to the frontend over WebSockets.
   Prisma, deriving its status from start and end times.
 - `GET /matches` lists newest matches first, with an optional positive integer
   `limit` (default 50, maximum 100).
+- `POST /matches/:id/commentary` validates a commentary entry and saves it to
+  the specified match. It returns HTTP 404 for an unknown match and HTTP 409
+  for a duplicate sequence within that match.
+- `GET /matches/:id/commentary` lists the match's commentary newest first,
+  with an optional positive integer `limit` (default and maximum 100).
 - WebSocket clients connect at `/ws`, receive a `welcome` event, and receive
   `match_created` after a match is saved. A ping/pong heartbeat clears dead
   connections.
@@ -33,6 +38,7 @@ Sports data simulation is planned.
 | --- | --- |
 | HTTP | 50 requests per fixed 10-second window |
 | `POST /matches` | Also limited to 10 requests per fixed minute |
+| `POST /matches/:id/commentary` | Also limited to 10 requests per fixed minute across all match IDs |
 | `/ws` | 5 upgrade attempts per rolling 2 seconds and 20 concurrent sockets |
 
 Rate-limit rejections use HTTP 429. The WebSocket server also caps total
@@ -41,11 +47,11 @@ application messages. Set `WS_ALLOWED_ORIGINS` to a comma-separated list of exac
 frontend origins (including scheme and port) to enforce a browser origin
 allowlist. With the allowlist enabled, clients must send a listed Origin.
 
-Set `MATCH_WRITE_TOKEN` in the backend's `.env` to enable match creation.
+Set `MATCH_WRITE_TOKEN` in the backend's `.env` to enable match and commentary creation.
 Generate a secret with `node -p "require('node:crypto').randomBytes(32).toString('hex')"`
 and send it as `Authorization: Bearer <token>` from a trusted backend or CLI.
 Keep the token out of frontend code and transmit it over HTTPS in deployment.
-Match writes accept up to 16 KiB of uncompressed JSON.
+Both write endpoints accept up to 16 KiB of uncompressed JSON.
 
 Helmet adds HTTP security headers. Match reads and WebSocket upgrades use
 User-Agent bot detection, with selected search and preview agents allowed on

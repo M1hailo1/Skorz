@@ -5,6 +5,7 @@ import http from "http";
 import { matchRouter } from "./routes/matches.js";
 import { attachWebSocketServer } from "./ws/server.js";
 import { createHttpLimiter } from "./security.js";
+import { commentaryRouter } from "./routes/commentary.js";
 
 const app = express();
 const PORT = Number(process.env.PORT || 8000);
@@ -12,13 +13,17 @@ const HOST = process.env.HOST || "0.0.0.0";
 
 app.use(helmet());
 app.use(createHttpLimiter(10_000, 50));
-const server = http.createServer({ headersTimeout: 10_000, requestTimeout: 30_000 }, app);
+const server = http.createServer(
+  { headersTimeout: 10_000, requestTimeout: 30_000 },
+  app,
+);
 
 app.get("/", (req, res) => {
   res.send("Hello from Express!");
 });
 
 app.use("/matches", matchRouter);
+app.use("/matches/:id/commentary", commentaryRouter);
 
 const handleRequestError: ErrorRequestHandler = (error, _req, res, next) => {
   if (res.headersSent) {
@@ -36,7 +41,9 @@ const handleRequestError: ErrorRequestHandler = (error, _req, res, next) => {
 app.use(handleRequestError);
 
 const allowedOrigins = new Set(
-  process.env.WS_ALLOWED_ORIGINS?.split(",").map(origin => origin.trim()).filter(Boolean),
+  process.env.WS_ALLOWED_ORIGINS?.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
 );
 const { broadcastMatchCreated } = attachWebSocketServer(server, allowedOrigins);
 app.locals.broadcastMatchCreated = broadcastMatchCreated;
