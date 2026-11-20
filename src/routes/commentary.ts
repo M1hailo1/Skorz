@@ -73,6 +73,7 @@ commentaryRouter.post(
           metadata: metadata === null ? Prisma.DbNull : metadata,
         },
       });
+      res.app.locals.broadcastCommentary?.(data.matchId, data);
       res.status(201).json({ data });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {

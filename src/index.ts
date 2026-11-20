@@ -45,8 +45,12 @@ const allowedOrigins = new Set(
     .map((origin) => origin.trim())
     .filter(Boolean),
 );
-const { broadcastMatchCreated } = attachWebSocketServer(server, allowedOrigins);
+const { broadcastMatchCreated, broadcastCommentary } = attachWebSocketServer(
+  server,
+  allowedOrigins,
+);
 app.locals.broadcastMatchCreated = broadcastMatchCreated;
+app.locals.broadcastCommentary = broadcastCommentary;
 
 try {
   await prisma.$queryRaw`SELECT 1`;

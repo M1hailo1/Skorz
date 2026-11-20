@@ -21,8 +21,8 @@ updates to the frontend over WebSockets.
 - `GET /matches/:id/commentary` lists the match's commentary newest first,
   with an optional positive integer `limit` (default and maximum 100).
 - WebSocket clients connect at `/ws`, receive a `welcome` event, and receive
-  `match_created` after a match is saved. A ping/pong heartbeat clears dead
-  connections.
+  `match_created` after a match is saved. Clients can subscribe to live
+  commentary for specific matches. A ping/pong heartbeat clears dead connections.
 - Prisma connection to Neon, checked before the server starts.
 - Prisma models for matches and commentary, including match status, scores,
   JSONB event metadata, tags, and ordered commentary per match.
@@ -31,6 +31,17 @@ updates to the frontend over WebSockets.
 - TypeScript development, type checking, and production builds.
 
 Sports data simulation is planned.
+
+## WebSocket subscriptions
+
+Send `{"type":"subscribe","matchId":42}` to receive new commentary for match 42
+or `{"type":"unsubscribe","matchId":42}` to stop receiving it. The server
+acknowledges valid commands with `subscribed` or `unsubscribed` and the match ID.
+Invalid commands receive an `error` event.
+
+After a successful commentary POST, subscribers receive a `commentary` event
+with the saved entry in `data`. Use `GET /matches/:id/commentary` to load history.
+Send subscriptions again after reconnecting.
 
 ## Request protection
 
@@ -42,8 +53,10 @@ Sports data simulation is planned.
 | `/ws` | 5 upgrade attempts per rolling 2 seconds and 20 concurrent sockets |
 
 Rate-limit rejections use HTTP 429. The WebSocket server also caps total
-connections at 1,000, drops slow consumers, and accepts only server-to-client
-application messages. Set `WS_ALLOWED_ORIGINS` to a comma-separated list of exact
+connections at 1,000 and drops slow consumers. Each socket can subscribe to up
+to 100 matches. Incoming messages have a 1 KiB payload limit, and a socket is
+closed if it sends more than 100 messages in a fixed 10-second window.
+Set `WS_ALLOWED_ORIGINS` to a comma-separated list of exact
 frontend origins (including scheme and port) to enforce a browser origin
 allowlist. With the allowlist enabled, clients must send a listed Origin.
 
